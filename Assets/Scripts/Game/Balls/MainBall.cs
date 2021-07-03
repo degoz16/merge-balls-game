@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace Game.Balls {
     public class MainBall : MonoBehaviour {
-        [SerializeField] private float _forceMultiplier = 100f;
+        [SerializeField] private float forceMultiplier = 100f;
         private Rigidbody2D _rigidbody2D;
         private Vector2 _lastPos = Vector2.zero;
         
@@ -24,7 +24,7 @@ namespace Game.Balls {
                 _lastPos = Input.mousePosition;
             }
             if (Input.GetMouseButtonUp(0)) {
-                var forceVec = dt * _forceMultiplier * ((Vector2) Input.mousePosition - _lastPos);
+                var forceVec = dt * forceMultiplier * ((Vector2) Input.mousePosition - _lastPos);
                 _rigidbody2D.AddForce(forceVec);
             }
         }
