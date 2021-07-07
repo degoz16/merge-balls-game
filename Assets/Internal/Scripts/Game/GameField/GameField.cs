@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 namespace Game.GameField {
     public class GameField : MonoBehaviour {
@@ -24,6 +26,10 @@ namespace Game.GameField {
                     newBall.transform.SetParent(transform);
                 }
             }
+        }
+
+        private void FixedUpdate() {
+            
         }
 
         private Vector2? FindBallPos() {
