@@ -1,9 +1,7 @@
-using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
-namespace Game.GameField {
+namespace Internal.Scripts.Game.GameField {
     public class GameField : MonoBehaviour {
         [SerializeField] private float ballRadius = 0.5f;
         [SerializeField] private float width = 10;

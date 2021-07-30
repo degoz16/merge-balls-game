@@ -1030,6 +1030,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8280963302346301907, guid: 696309708a1c29e47a11749079f94a13, type: 3}
+      propertyPath: m_Parameters.widthMultiplier
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8280963302346301907, guid: 696309708a1c29e47a11749079f94a13, type: 3}
       propertyPath: m_Positions.Array.data[10].x
       value: 0
       objectReference: {fileID: 0}

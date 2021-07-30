@@ -1,8 +1,7 @@
-using System;
 using TMPro;
 using UnityEngine;
 
-namespace Game.Balls {
+namespace Internal.Scripts.Game.Balls {
     public class Ball : MonoBehaviour {
         private Rigidbody2D _rigidbody2D;
         private Collider2D _collider2D;

@@ -1,3 +1,4 @@
+using Internal.Scripts.Core.Utils;
 using UnityEngine;
 
 namespace Internal.Scripts.Game.Trajectory {
@@ -6,16 +7,24 @@ namespace Internal.Scripts.Game.Trajectory {
         [SerializeField] private GameObject reflectionLineGameObject;
         [SerializeField] private GameObject targetReflectionLineGameObject;
         [SerializeField] private GameObject ballProjectionGameObject;
+        [SerializeField] private GameObject powerLevelLineGameObject;
 
         private LineRenderer _directionLine;
         private LineRenderer _reflectionLine;
         private LineRenderer _targetReflectionLine;
         private LineRenderer _ballProjection;
+        private LineRenderer _powerLevel;
+
+        [SerializeField] private float powerLevelLength = 3f;
+        [SerializeField] private float powerLevelViewMultiplier = 0.08f;
+        [SerializeField] private float directionLineWidth = 0.05f;
+        [SerializeField, Range(0f, 1f)] private float powerLevelLineFadeLength = 0.8f;
+        [SerializeField] private Gradient powerLevelGradient;
 
         private Camera _mainCamera;
         private float _radius;
 
-        void Start() {
+        private void Start() {
             _mainCamera = Camera.main;
             if (transform.parent) {
                 CircleCollider2D circleCollider2D = transform.parent.gameObject.GetComponent<CircleCollider2D>();
@@ -26,25 +35,29 @@ namespace Internal.Scripts.Game.Trajectory {
             reflectionLineGameObject.SetActive(false);
             targetReflectionLineGameObject.SetActive(false);
             ballProjectionGameObject.SetActive(false);
+            powerLevelLineGameObject.SetActive(false);
 
             _directionLine = directionLineGameObject.GetComponent<LineRenderer>();
             _reflectionLine = reflectionLineGameObject.GetComponent<LineRenderer>();
             _targetReflectionLine = targetReflectionLineGameObject.GetComponent<LineRenderer>();
             _ballProjection = ballProjectionGameObject.GetComponent<LineRenderer>();
+            _powerLevel = powerLevelLineGameObject.GetComponent<LineRenderer>();
+
+            _ballProjection.widthMultiplier = directionLineWidth;
+            _reflectionLine.widthMultiplier = directionLineWidth;
+            _targetReflectionLine.widthMultiplier = directionLineWidth;
+            _powerLevel.widthMultiplier = directionLineWidth * 2;
         }
 
-        private static void UpdateLine(LineRenderer line, Vector2 position1, Vector2 position2) {
-            Vector3 point = new Vector3(0, 0, -0.1f) {x = position1.x, y = position1.y};
-
-            line.SetPosition(0, point);
-
-            point.x = position2.x;
-            point.y = position2.y;
-            line.SetPosition(1, point);
+        private static void UpdateLine(LineRenderer line, params Vector2[] positions) {
+            line.positionCount = positions.Length;
+            for (int i = 0; i < positions.Length; i++) {
+                line.SetPosition(i, new Vector3(positions[i].x, positions[i].y, -0.1f));
+            }
         }
 
         private static void UpdateCircle(LineRenderer line, Vector2 pos, float radius) {
-            if (line != null) {
+            if (line) {
                 float drawStep = 2 * Mathf.PI / line.positionCount;
                 for (int i = 0; i < line.positionCount; i++) {
                     line.SetPosition(i, new Vector3(
@@ -55,8 +68,17 @@ namespace Internal.Scripts.Game.Trajectory {
             }
         }
 
+        private static Vector2[] GetInterpolatedPoints(Vector2 pos1, Vector2 pos2, int cnt) {
+            var points = new Vector2[cnt + 1];
+            float step = 1f / cnt;
+            for (int i = 0; i <= cnt; i++) {
+                points[i] = Vector2.Lerp(pos1, pos2, step * i);
+            }
+
+            return points;
+        }
         // Update is called once per frame
-        void Update() {
+        private void Update() {
             Vector2 position = transform.position;
             Vector2 mousePosition = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
 
@@ -73,8 +95,6 @@ namespace Internal.Scripts.Game.Trajectory {
                 if (hit) {
                     // Draw a direction line
                     UpdateLine(_directionLine, position, hit.centroid);
-                    _directionLine.startWidth = Mathf.Clamp(
-                        (mousePosition - position).magnitude / 10, 0.01f, 2 * _radius * 0.9f);
 
                     if (!directionLineGameObject.activeSelf) {
                         directionLineGameObject.SetActive(true);
@@ -113,6 +133,35 @@ namespace Internal.Scripts.Game.Trajectory {
                         ballProjectionGameObject.SetActive(true);
                     }
                 }
+
+                // Draw a power level
+                if (!powerLevelLineGameObject.activeSelf) {
+                    powerLevelLineGameObject.SetActive(true);
+                }
+
+                float sigmoid =
+                    Functions.RangeSigmoid(0f, powerLevelLength,
+                        (mousePosition - position).magnitude * powerLevelViewMultiplier);
+                Vector2 secondPos = Vector2.Lerp(position, position + direction * powerLevelLength, sigmoid);
+                if ((secondPos - position).magnitude > (hit.centroid - position).magnitude) {
+                    secondPos = hit.centroid;
+                }
+
+                UpdateLine(_powerLevel, GetInterpolatedPoints(position, secondPos, 10));
+
+                Gradient newGradient = new Gradient();
+                Color powerColor = powerLevelGradient.Evaluate(sigmoid);
+                newGradient.SetKeys(
+                    new[] {
+                        new GradientColorKey(powerColor, 0f),
+                        new GradientColorKey(powerColor, 1f)
+                    },
+                    new[] {
+                        new GradientAlphaKey(1f, 0f),
+                        new GradientAlphaKey(0.8f, powerLevelLineFadeLength),
+                        new GradientAlphaKey(0f, 1f)
+                    });
+                _powerLevel.colorGradient = newGradient;
             }
 
             if (Input.GetMouseButtonUp(0)) {
@@ -120,6 +169,7 @@ namespace Internal.Scripts.Game.Trajectory {
                 reflectionLineGameObject.SetActive(false);
                 targetReflectionLineGameObject.SetActive(false);
                 ballProjectionGameObject.SetActive(false);
+                powerLevelLineGameObject.SetActive(false);
             }
         }
     }

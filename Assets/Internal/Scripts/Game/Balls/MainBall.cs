@@ -1,8 +1,6 @@
-using System;
 using UnityEngine;
-using UnityEngine.UIElements;
 
-namespace Game.Balls {
+namespace Internal.Scripts.Game.Balls {
     public class MainBall : MonoBehaviour {
         [SerializeField] private float forceMultiplier = 100f;
         private Rigidbody2D _rigidbody2D;
