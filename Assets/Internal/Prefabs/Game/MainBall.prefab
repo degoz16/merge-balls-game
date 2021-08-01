@@ -253,7 +253,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 1
   m_Mass: 0.7853982
-  m_LinearDrag: 0.6
+  m_LinearDrag: 1
   m_AngularDrag: 0.6
   m_GravityScale: 0
   m_Material: {fileID: 6200000, guid: a9ee643f9aa45604c9acb09592d250f4, type: 2}
@@ -365,7 +365,7 @@ LineRenderer:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 1
-        value: 0.5
+        value: 0.25
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -762,7 +762,7 @@ MonoBehaviour:
   targetReflectionLineGameObject: {fileID: 9143517531400820191}
   ballProjectionGameObject: {fileID: 6679590615029721004}
   powerLevelLineGameObject: {fileID: 3095758175279153642}
-  powerLevelLength: 4
+  powerLevelLength: 3
   powerLevelViewMultiplier: 0.08
   directionLineWidth: 0.05
   powerLevelLineFadeLength: 0.7

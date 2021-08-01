@@ -1,3 +1,4 @@
+using System;
 using Internal.Scripts.Core.Utils;
 using UnityEngine;
 
@@ -23,8 +24,18 @@ namespace Internal.Scripts.Game.Trajectory {
 
         private Camera _mainCamera;
         private float _radius;
+        private bool IsBallStopped { get; set; } = false;
+        private void SetStopped(bool stopped) => IsBallStopped = stopped;
+        
+        private void OnEnable() {
+            GameField.GameField.BallsStoppedEvent += SetStopped;
+        }
 
-        private void Start() {
+        private void OnDisable() {
+            GameField.GameField.BallsStoppedEvent -= SetStopped;
+        }
+
+        private void Awake() {
             _mainCamera = Camera.main;
             if (transform.parent) {
                 CircleCollider2D circleCollider2D = transform.parent.gameObject.GetComponent<CircleCollider2D>();
@@ -46,7 +57,8 @@ namespace Internal.Scripts.Game.Trajectory {
             _ballProjection.widthMultiplier = directionLineWidth;
             _reflectionLine.widthMultiplier = directionLineWidth;
             _targetReflectionLine.widthMultiplier = directionLineWidth;
-            _powerLevel.widthMultiplier = directionLineWidth * 2;
+            _powerLevel.widthMultiplier = directionLineWidth * 4;
+            _powerLevel.endWidth = directionLineWidth;
         }
 
         private static void UpdateLine(LineRenderer line, params Vector2[] positions) {
@@ -83,85 +95,84 @@ namespace Internal.Scripts.Game.Trajectory {
             Vector2 mousePosition = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
 
             if (Input.GetMouseButton(0)) {
-                Vector2 direction = mousePosition - position;
-                direction.Normalize();
+                if (IsBallStopped) {
+                    Vector2 direction = mousePosition - position;
+                    direction.Normalize();
 
-                RaycastHit2D hit = Physics2D.CircleCast(
-                    position,
-                    _radius,
-                    direction,
-                    Mathf.Infinity,
-                    LayerMask.GetMask("Game Field"));
-                if (hit) {
-                    // Draw a direction line
-                    UpdateLine(_directionLine, position, hit.centroid);
+                    RaycastHit2D hit = Physics2D.CircleCast(
+                        position,
+                        _radius,
+                        direction,
+                        Mathf.Infinity,
+                        LayerMask.GetMask("Game Field"));
+                    if (hit) {
+                        // Draw a direction line
+                        UpdateLine(_directionLine, position, hit.centroid);
 
-                    if (!directionLineGameObject.activeSelf) {
-                        directionLineGameObject.SetActive(true);
-                    }
+                        if (!directionLineGameObject.activeSelf) {
+                            directionLineGameObject.SetActive(true);
+                        }
 
-                    // Draw a reflection line
-                    Vector2 rotatedNormal = new Vector2(hit.normal.y, -hit.normal.x);
+                        // Draw a reflection line
+                        Vector2 rotatedNormal = new Vector2(hit.normal.y, -hit.normal.x);
 
-                    Vector2 reflection = hit.transform.tag.Equals("Ball")
-                        ? (Vector2.Dot(direction, rotatedNormal) * rotatedNormal).normalized
-                        : Vector2.Reflect(direction, hit.normal).normalized;
+                        Vector2 reflection = hit.transform.tag.Equals("Ball")
+                            ? (Vector2.Dot(direction, rotatedNormal) * rotatedNormal).normalized
+                            : Vector2.Reflect(direction, hit.normal).normalized;
 
 
-                    UpdateLine(_reflectionLine, hit.centroid, hit.centroid + reflection * 1.8f);
-                    if (!reflectionLineGameObject.activeSelf) {
-                        reflectionLineGameObject.SetActive(true);
-                    }
+                        UpdateLine(_reflectionLine, hit.centroid, hit.centroid + reflection * 1.8f);
+                        if (!reflectionLineGameObject.activeSelf) {
+                            reflectionLineGameObject.SetActive(true);
+                        }
 
-                    // Draw a target ball reflection line
-                    Vector2 hitObjectPos = hit.transform.position;
-                    if (hit.transform.tag.Equals("Ball")) {
-                        UpdateLine(_targetReflectionLine, hitObjectPos, hitObjectPos - hit.normal * 1.8f);
-                        if (!targetReflectionLineGameObject.activeSelf) {
-                            targetReflectionLineGameObject.SetActive(true);
+                        // Draw a target ball reflection line
+                        Vector2 hitObjectPos = hit.transform.position;
+                        if (hit.transform.tag.Equals("Ball")) {
+                            UpdateLine(_targetReflectionLine, hitObjectPos, hitObjectPos - hit.normal * 1.8f);
+                            if (!targetReflectionLineGameObject.activeSelf) {
+                                targetReflectionLineGameObject.SetActive(true);
+                            }
+                        }
+                        else {
+                            if (targetReflectionLineGameObject.activeSelf) {
+                                targetReflectionLineGameObject.SetActive(false);
+                            }
+                        }
+
+                        // Draw a ball position preview
+                        UpdateCircle(_ballProjection, hit.centroid, _radius);
+                        if (!ballProjectionGameObject.activeSelf) {
+                            ballProjectionGameObject.SetActive(true);
                         }
                     }
-                    else {
-                        if (targetReflectionLineGameObject.activeSelf) {
-                            targetReflectionLineGameObject.SetActive(false);
-                        }
+
+                    // Draw a power level
+                    if (!powerLevelLineGameObject.activeSelf) {
+                        powerLevelLineGameObject.SetActive(true);
                     }
 
-                    // Draw a ball position preview
-                    UpdateCircle(_ballProjection, hit.centroid, _radius);
-                    if (!ballProjectionGameObject.activeSelf) {
-                        ballProjectionGameObject.SetActive(true);
-                    }
+                    float sigmoid =
+                        Functions.RangeSigmoid(0.1f, powerLevelLength,
+                            (mousePosition - position).magnitude * powerLevelViewMultiplier);
+                    Vector2 secondPos = Vector2.Lerp(position, position + direction * powerLevelLength, sigmoid);
+
+                    UpdateLine(_powerLevel, GetInterpolatedPoints(position, secondPos, 10));
+
+                    Gradient newGradient = new Gradient();
+                    Color powerColor = powerLevelGradient.Evaluate(sigmoid);
+                    newGradient.SetKeys(
+                        new[] {
+                            new GradientColorKey(powerColor, 0f),
+                            new GradientColorKey(powerColor, 1f)
+                        },
+                        new[] {
+                            new GradientAlphaKey(1f, 0f),
+                            new GradientAlphaKey(1f, powerLevelLineFadeLength),
+                            new GradientAlphaKey(0f, 1f)
+                        });
+                    _powerLevel.colorGradient = newGradient;
                 }
-
-                // Draw a power level
-                if (!powerLevelLineGameObject.activeSelf) {
-                    powerLevelLineGameObject.SetActive(true);
-                }
-
-                float sigmoid =
-                    Functions.RangeSigmoid(0f, powerLevelLength,
-                        (mousePosition - position).magnitude * powerLevelViewMultiplier);
-                Vector2 secondPos = Vector2.Lerp(position, position + direction * powerLevelLength, sigmoid);
-                if ((secondPos - position).magnitude > (hit.centroid - position).magnitude) {
-                    secondPos = hit.centroid;
-                }
-
-                UpdateLine(_powerLevel, GetInterpolatedPoints(position, secondPos, 10));
-
-                Gradient newGradient = new Gradient();
-                Color powerColor = powerLevelGradient.Evaluate(sigmoid);
-                newGradient.SetKeys(
-                    new[] {
-                        new GradientColorKey(powerColor, 0f),
-                        new GradientColorKey(powerColor, 1f)
-                    },
-                    new[] {
-                        new GradientAlphaKey(1f, 0f),
-                        new GradientAlphaKey(0.8f, powerLevelLineFadeLength),
-                        new GradientAlphaKey(0f, 1f)
-                    });
-                _powerLevel.colorGradient = newGradient;
             }
 
             if (Input.GetMouseButtonUp(0)) {

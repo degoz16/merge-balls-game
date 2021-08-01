@@ -7,6 +7,7 @@ TagManager:
   - Border
   - MainBall
   - Ball
+  - GameField
   layers:
   - Default
   - TransparentFX
