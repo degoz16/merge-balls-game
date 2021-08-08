@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Internal.Scripts.Game.ColorSchemes;
 using TMPro;
 using UnityEngine;
@@ -6,7 +7,9 @@ using UnityEngine;
 namespace Internal.Scripts.Game.Balls {
     public class Ball : MonoBehaviour {
         [SerializeField] private ColorSchemeObject colorScheme;
-
+        [SerializeField] private GameObject particlesPrefab;
+        
+        
         private Color _color = Color.gray;
         private Color _textColor = Color.white;
         private Rigidbody2D _rigidbody2D;
@@ -19,7 +22,7 @@ namespace Internal.Scripts.Game.Balls {
         public delegate void BallsCountChangedEventHandler();
         public static event BallsCountChangedEventHandler BallsCountChangedEvent = delegate {  };
         
-        private int PowerProperty {
+        public int PowerProperty {
             get => _power;
             set {
                 _power = value;
@@ -94,9 +97,15 @@ namespace Internal.Scripts.Game.Balls {
                 }
             }
         }
-
+        
         private void OnDestroy() {
             BallsCountChangedEvent();
+            GameObject particlesObject = Instantiate(particlesPrefab, transform.parent, true);
+            ParticleSystem particles = particlesObject.GetComponent<ParticleSystem>();
+            var main = particles.main;
+            main.startColor = _color;
+            particlesObject.transform.position = transform.position;
+            particles.Play();
         }
     }
 }

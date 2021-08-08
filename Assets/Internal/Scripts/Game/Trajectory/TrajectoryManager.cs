@@ -1,5 +1,5 @@
-using System;
 using Internal.Scripts.Core.Utils;
+using Internal.Scripts.Game.Balls;
 using UnityEngine;
 
 namespace Internal.Scripts.Game.Trajectory {
@@ -22,17 +22,22 @@ namespace Internal.Scripts.Game.Trajectory {
         [SerializeField, Range(0f, 1f)] private float powerLevelLineFadeLength = 0.8f;
         [SerializeField] private Gradient powerLevelGradient;
 
+        private bool _isReadyToHit = false;
         private Camera _mainCamera;
         private float _radius;
-        private bool IsBallStopped { get; set; } = false;
-        private void SetStopped(bool stopped) => IsBallStopped = stopped;
+        private bool IsBallStopped { get; set; } = true;
+        private void SetStopped() => IsBallStopped = true;
         
         private void OnEnable() {
             GameField.GameField.BallsStoppedEvent += SetStopped;
+            MainBall.AimingStartedEvent += OnAimingStarted;
+            MainBall.HitEvent += OnHit;
         }
 
         private void OnDisable() {
             GameField.GameField.BallsStoppedEvent -= SetStopped;
+            MainBall.AimingStartedEvent -= OnAimingStarted;
+            MainBall.HitEvent -= OnHit;
         }
 
         private void Awake() {
@@ -89,13 +94,32 @@ namespace Internal.Scripts.Game.Trajectory {
 
             return points;
         }
+
+        private void OnAimingStarted() {
+            if (IsBallStopped) {
+                _isReadyToHit = true;
+            }
+        }
+        
+        private void OnHit() {
+            if (_isReadyToHit) {
+                IsBallStopped = false;
+                _isReadyToHit = false;
+            }
+
+            directionLineGameObject.SetActive(false);
+            reflectionLineGameObject.SetActive(false);
+            targetReflectionLineGameObject.SetActive(false);
+            ballProjectionGameObject.SetActive(false);
+            powerLevelLineGameObject.SetActive(false);
+        }
+        
         // Update is called once per frame
         private void Update() {
             Vector2 position = transform.position;
             Vector2 mousePosition = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
-
             if (Input.GetMouseButton(0)) {
-                if (IsBallStopped) {
+                if (IsBallStopped && _isReadyToHit) {
                     Vector2 direction = mousePosition - position;
                     direction.Normalize();
 
@@ -139,14 +163,25 @@ namespace Internal.Scripts.Game.Trajectory {
                                 targetReflectionLineGameObject.SetActive(false);
                             }
                         }
-
+    
                         // Draw a ball position preview
                         UpdateCircle(_ballProjection, hit.centroid, _radius);
                         if (!ballProjectionGameObject.activeSelf) {
                             ballProjectionGameObject.SetActive(true);
                         }
                     }
+                    else {
+                        reflectionLineGameObject.SetActive(false);
+                        targetReflectionLineGameObject.SetActive(false);
+                        ballProjectionGameObject.SetActive(false);
+                        
+                        // Draw a direction line
+                        UpdateLine(_directionLine, position, position + direction * 2);
 
+                        if (!directionLineGameObject.activeSelf) {
+                            directionLineGameObject.SetActive(true);
+                        }
+                    }
                     // Draw a power level
                     if (!powerLevelLineGameObject.activeSelf) {
                         powerLevelLineGameObject.SetActive(true);
@@ -173,14 +208,6 @@ namespace Internal.Scripts.Game.Trajectory {
                         });
                     _powerLevel.colorGradient = newGradient;
                 }
-            }
-
-            if (Input.GetMouseButtonUp(0)) {
-                directionLineGameObject.SetActive(false);
-                reflectionLineGameObject.SetActive(false);
-                targetReflectionLineGameObject.SetActive(false);
-                ballProjectionGameObject.SetActive(false);
-                powerLevelLineGameObject.SetActive(false);
             }
         }
     }

@@ -7,10 +7,15 @@ namespace Internal.Scripts.Game.Balls {
         private Rigidbody2D _rigidbody2D;
         private CircleCollider2D _collider2D;
         private Camera _mainCamera;
+        private bool _isReadyToHit;
+        private bool IsBallStopped { get; set; } = true;
+        private void SetStopped() => IsBallStopped = true;
 
-        private bool IsBallStopped { get; set; } = false;
-        private void SetStopped(bool stopped) => IsBallStopped = stopped;
+        public delegate void AimingStartedEventHandler();
+        public delegate void HitEventHandler();
         
+        public static event AimingStartedEventHandler AimingStartedEvent = delegate {  };
+        public static event HitEventHandler HitEvent = delegate {  };
         private void OnEnable() {
             GameField.GameField.BallsStoppedEvent += SetStopped;
         }
@@ -29,16 +34,21 @@ namespace Internal.Scripts.Game.Balls {
             Vector2 position = transform.position;
             Vector2 mousePosition = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
             // mousePosition.z = 0;
-            if (Input.GetMouseButtonUp(0)) {
+            if (Input.GetMouseButtonDown(0)) {
                 if (IsBallStopped) {
-                    Vector2 forceVec = forceMultiplier * (mousePosition - position);
-                    _rigidbody2D.AddForce(forceVec);
+                    _isReadyToHit = true;
+                    AimingStartedEvent();
                 }
             }
-        }
-
-        private void FixedUpdate() {
-            
+            if (Input.GetMouseButtonUp(0)) {
+                if (IsBallStopped && _isReadyToHit) {
+                    _isReadyToHit = false;
+                    Vector2 forceVec = forceMultiplier * (mousePosition - position);
+                    _rigidbody2D.AddForce(forceVec);
+                    IsBallStopped = false;
+                    HitEvent();
+                }
+            }
         }
     }
 }
