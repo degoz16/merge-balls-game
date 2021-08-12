@@ -51,17 +51,18 @@ namespace Internal.Scripts.Game.GameField {
 
         // ReSharper disable Unity.PerformanceAnalysis
         private void SpawnBalls(int count) {
+            bool flag = false;
             for (int i = 0; i < count; i++) {
                 var pos = FindBallPos();
                 if (pos != null) {
                     var newBall = Instantiate(ballPrefab, pos.Value, Quaternion.identity);
                     newBall.transform.SetParent(balls.transform);
                     newBall.GetComponent<Ball>().PowerProperty = Random.Range(1, 3);
+                    flag = true;
                 }
-                else if (i == 0) {
-                    GameOverEvent();
-                    return;
-                }
+            }
+            if (!flag) {
+                GameOverEvent();
             }
         }
 
@@ -74,10 +75,9 @@ namespace Internal.Scripts.Game.GameField {
 
             Transform borderTransform = border.transform;
             
-            RectTransform borderRectTransform = border.GetComponent<RectTransform>();
-            var rect = borderRectTransform.rect;
-            _width = rect.width;
-            _height = rect.height;
+            Border borderScript = border.GetComponent<Border>();
+            _width = borderScript.Width;
+            _height = borderScript.Height;
             _fieldPos = borderTransform.position - new Vector3(_width / 2f, _height / 2f);
         }
 
@@ -90,6 +90,11 @@ namespace Internal.Scripts.Game.GameField {
             Ball.BallsCountChangedEvent += UpdateBallsList;
             BallsStoppedEvent += SpawnBalls;
             GameStartedEvent += SpawnBalls;
+            GameOverEvent += () => {
+                foreach (Rigidbody2D rigidbody2D1 in _ballsList) {
+                    Destroy(rigidbody2D1.gameObject);
+                }
+            };
             // MainBall.AimingStartedEvent += OnAimingStarted;
             MainBall.HitEvent += OnHit;
         }

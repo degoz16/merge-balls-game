@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4605839187991973802}
   - component: {fileID: 3250016854193158217}
   - component: {fileID: 7667530181700661355}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: ParticleSystem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -746,7 +746,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 1
+      value: 0.01
       mode: 0
       spread: 0
       speed:

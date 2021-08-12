@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4591922044268767589}
   - component: {fileID: 4445980906004768979}
   - component: {fileID: 8438469599245573987}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Ball
   m_TagString: Ball
   m_Icon: {fileID: 0}
@@ -162,7 +162,7 @@ GameObject:
   - component: {fileID: 4687093367124379891}
   - component: {fileID: 6364501553254122321}
   - component: {fileID: 3459669751025610733}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: NumberText
   m_TagString: Ball
   m_Icon: {fileID: 0}
