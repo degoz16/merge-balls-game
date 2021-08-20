@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 172fa6cb53a1dbd48bd2d5c57c45dbe5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - mutedSprite: {fileID: 21300000, guid: 48e6381ce67c0e84096a720e71c97053, type: 3}
+  - unMutedSprite: {fileID: 21300000, guid: f80e4870023032d4c8da498abe8b6fa8, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

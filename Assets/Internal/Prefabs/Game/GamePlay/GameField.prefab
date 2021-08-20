@@ -173,6 +173,7 @@ MonoBehaviour:
   ballPrefab: {fileID: 4324168810575280671, guid: eb495fd0beeae6d4d9f269872dee5e02, type: 3}
   balls: {fileID: 1095315867323388451}
   border: {fileID: 1095315865744710883}
+  mainBall: {fileID: 0}
 --- !u!1 &1095315867323388451
 GameObject:
   m_ObjectHideFlags: 0
@@ -282,6 +283,10 @@ PrefabInstance:
     - target: {fileID: 671508286869748343, guid: 696309708a1c29e47a11749079f94a13, type: 3}
       propertyPath: m_WasSpriteAssigned
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 671508286869748343, guid: 696309708a1c29e47a11749079f94a13, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 3095758175279153642, guid: 696309708a1c29e47a11749079f94a13, type: 3}
       propertyPath: m_Layer

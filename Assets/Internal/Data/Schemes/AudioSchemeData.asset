@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff51ce31dcca49ada8499d2391e744c3, type: 3}
+  m_Name: AudioSchemeData
+  m_EditorClassIdentifier: 
+  hitSounds:
+  - {fileID: 8300000, guid: 3f17de94031216246ad285f0d15bbe09, type: 3}
+  - {fileID: 8300000, guid: 82dbd63c64be7964e9b23cec12b8bc5f, type: 3}
+  - {fileID: 8300000, guid: 6da15f399998f4541a72a8ba929fa8da, type: 3}
+  ballDestructionSounds:
+  - {fileID: 8300000, guid: 391cb601951ad724495a1de58a63c8b7, type: 3}
+  - {fileID: 8300000, guid: 26769e460a5cfe646bd45a40b6bb7c0b, type: 3}
+  - {fileID: 8300000, guid: ebafe377365d6694797344860f07a89f, type: 3}

@@ -3,7 +3,13 @@ guid: 50d559821f3b47c47a125cf73ca0b6e7
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - directionLinePrefab: {fileID: 1886151078139245311, guid: 9fb6884464da07c4495945983556f1c6, type: 3}
+  - reflectionLinePrefab: {fileID: 6803299964451668966, guid: c3d0461990c7434488ee76157798f757, type: 3}
+  - targetReflectionLinePrefab: {fileID: 3998309745118730909, guid: 6ac6f4071b6a8c945a4df9690cf4936f, type: 3}
+  - ballProjectionPrefab: {fileID: 6222275666628023411, guid: 71c7950f845d2364bb83272925f724d9, type: 3}
+  - powerLevelLinePrefab: {fileID: 8047725585831498262, guid: 00abc545b82cec445ad72be18e3b34b4, type: 3}
+  - tapDirectionLinePrefab: {fileID: 3998309745118730909, guid: 1bf440bbb4cc1804c8b0133d006ce084, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

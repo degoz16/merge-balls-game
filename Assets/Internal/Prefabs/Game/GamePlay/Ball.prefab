@@ -121,7 +121,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 1
   m_Mass: 0.7853982
-  m_LinearDrag: 1.2
+  m_LinearDrag: 1
   m_AngularDrag: 1
   m_GravityScale: 0
   m_Material: {fileID: 6200000, guid: a9ee643f9aa45604c9acb09592d250f4, type: 2}
@@ -141,7 +141,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba54cb3087cb3094fad350915770d4fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorScheme: {fileID: 11400000, guid: c8a885a18a77ae3489c6893974aaae91, type: 2}
   particlesPrefab: {fileID: 4189612378684223542, guid: 8e052c84442223545bea2fad08d2288a, type: 3}
 --- !u!222 &8438469599245573987
 CanvasRenderer:
