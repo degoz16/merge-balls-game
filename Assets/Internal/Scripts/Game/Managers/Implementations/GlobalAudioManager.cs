@@ -2,7 +2,7 @@
 using UnityEngine;
 
 namespace Internal.Scripts.Game.Managers.Implementations {
-    public class GlobalAudioManager : MonoBehaviorSingleton<GlobalAudioManager> {
+    public class GlobalAudioManager : MonoBehaviourSingleton<GlobalAudioManager> {
         private AudioSource _audioSource;
 
         protected override void SingletonAwakened() {

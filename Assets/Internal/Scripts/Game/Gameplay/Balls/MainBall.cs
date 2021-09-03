@@ -1,9 +1,8 @@
-using System;
+using Internal.Scripts.Core.Utils.Math;
 using Internal.Scripts.Game.Gameplay.GameFieldObjects;
 using Internal.Scripts.Game.Managers.Implementations;
 using UnityEngine;
 using UnityEngine.Events;
-using Random = UnityEngine.Random;
 
 namespace Internal.Scripts.Game.Gameplay.Balls {
     public class MainBall : MonoBehaviour {
@@ -20,8 +19,9 @@ namespace Internal.Scripts.Game.Gameplay.Balls {
             get => gameField;
             set => gameField = value;
         }
-        
-        private Rigidbody2D _rigidbody2D;
+
+        public Rigidbody2D Rigidbody2D { get; private set; }
+
         private TrajectoryManager _trajectoryManager;
         private Camera _mainCamera;
         private bool _isReadyToHit;
@@ -53,8 +53,9 @@ namespace Internal.Scripts.Game.Gameplay.Balls {
                 _trajectoryManager.OnAimingButtonUp();
             }
             if ((targetPosition - position).magnitude < 0.05f) return;
-            var forceVec = forceMultiplier * (targetPosition - position);
-            _rigidbody2D.AddForce(forceVec);
+            var direction = (targetPosition - position).normalized;
+            var forceVec = direction * Functions.RangeSigmoid(0f, forceMultiplier, (targetPosition - position).magnitude * 0.08f);
+            Rigidbody2D.AddForce(forceVec);
 
             GlobalAudioManager.PlayHitSound();
             Ball.DestroyedCount = 0;
@@ -70,7 +71,7 @@ namespace Internal.Scripts.Game.Gameplay.Balls {
             
             _trajectoryManager = gameObject.GetComponent<TrajectoryManager>();
             _mainCamera = Camera.main;
-            _rigidbody2D = gameObject.GetComponent<Rigidbody2D>();
+            Rigidbody2D = gameObject.GetComponent<Rigidbody2D>();
             if (!gameField) {
                 gameField = transform.parent.parent.gameObject.GetComponent<GameField>();
             }
@@ -84,7 +85,7 @@ namespace Internal.Scripts.Game.Gameplay.Balls {
         private void OnCollisionEnter2D(Collision2D other) {
             if (other.gameObject.tag.Equals("Border")
                 || transform.GetInstanceID() < other.transform.GetInstanceID()) {
-                GlobalAudioManager.PlayHitSound(_rigidbody2D.velocity.magnitude / 60f);
+                GlobalAudioManager.PlayHitSound(Rigidbody2D.velocity.magnitude / 60f);
             }
         }
     }

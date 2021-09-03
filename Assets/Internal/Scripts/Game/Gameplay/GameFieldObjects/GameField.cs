@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Internal.Scripts.Game.Gameplay.Balls;
 using Internal.Scripts.Game.Managers.Implementations;
@@ -18,9 +19,12 @@ namespace Internal.Scripts.Game.Gameplay.GameFieldObjects {
         private float _width;
         private float _height;
         private Vector2 _fieldPos;
-        private Rigidbody2D[] _ballsList;
+        private Rigidbody2D[] _ballsRigidBodyList;
         private float _ballRadius = 0.5f;
         public bool IsBallsStopped { get; private set; } = true;
+        private IEnumerator _lastAdCoroutine;
+
+        public List<Ball> Balls => balls.transform.GetComponentsInChildren<Ball>().ToList();
 
         public MainBall MainBall {
             get => mainBall;
@@ -28,36 +32,54 @@ namespace Internal.Scripts.Game.Gameplay.GameFieldObjects {
         }
 
         private bool CheckIsBallsStopped() {
-            return _ballsList.All(r => r.velocity.magnitude < maxVelocityToStop);
+            return _ballsRigidBodyList.All(r => r.velocity.magnitude < maxVelocityToStop);
         }
 
         private IEnumerator DoBallsMotionCheck() {
             IsBallsStopped = false;
             yield return new WaitForSeconds(.5f);
             yield return new WaitUntil(CheckIsBallsStopped);
-            yield return new WaitForSeconds(Ball.AnimationTime + 0.2f);
-            IsBallsStopped = true;
             OnBallsStopped();
+            yield return new WaitForSeconds(Ball.AnimationTime + 0.1f);
+            IsBallsStopped = true;
         }
 
+        private void StartAdShowing() {
+            _lastAdCoroutine = AdShower();
+            StartCoroutine(_lastAdCoroutine);
+        }
+
+        private void StopAdShowing() {
+            if (_lastAdCoroutine != null) {
+                StopCoroutine(_lastAdCoroutine);
+                _lastAdCoroutine = null;
+            }
+        }
+        
+        private IEnumerator AdShower() {
+            var period = new WaitForSecondsRealtime(10);
+            while (GlobalStateManager.Instance.IsGameScene) {
+                yield return new WaitUntil(() => AdMobManager.Instance.IsAdClosed);
+                yield return period;
+                AdMobManager.Instance.ShowInterstitialAd();
+            }
+        }
+        
         private void UpdateBallsList() {
-            _ballsList = balls.GetComponentsInChildren<Rigidbody2D>();
+            _ballsRigidBodyList = balls.GetComponentsInChildren<Rigidbody2D>();
         }
 
         // ReSharper disable Unity.PerformanceAnalysis
         private void SpawnBalls(int count = 2) {
-            if (_ballRadius * _ballRadius * Mathf.PI * _ballsList.Length > _width * _height / 3.5f) {
-                GlobalStateManager.Instance.GameOver();
-                return;
-            }
-
             // var flag = false;
             for (var i = 0; i < count; i++) {
                 var pos = FindBallPos();
                 if (pos == null) continue;
                 var newBall = Instantiate(ballPrefab, pos.Value, Quaternion.identity);
+                var ballScript = newBall.GetComponent<Ball>();
+                ballScript.PlaySpawnAnimation();
                 newBall.transform.SetParent(balls.transform);
-                newBall.GetComponent<Ball>().PowerProperty = Random.Range(1, 3);
+                ballScript.PowerProperty = Random.Range(1, 3);
                 // flag = true;
             }
             // if (!flag) {
@@ -65,27 +87,68 @@ namespace Internal.Scripts.Game.Gameplay.GameFieldObjects {
             // }
         }
 
+        private void OnRestart() {
+            StopAdShowing();
+            StartAdShowing();
+            OnGameStarted(true);
+        }
+        
         private void OnGameOver() {
-            foreach (var rigidbody2D1 in _ballsList) {
-                Destroy(rigidbody2D1.gameObject);
-            }
+            StopAdShowing();
+            AdMobManager.Instance.ShowInterstitialAd();
+            GlobalStateManager.Instance.Score = 0;
+            Balls.ForEach(b => Destroy(b.gameObject));
+            mainBall.transform.localPosition = Vector3.zero;
+            mainBall.Rigidbody2D.velocity = Vector2.zero;
+            SettingsManager.Instance.IsNewGame = true;
         }
 
         private void OnGameStarted(bool isNewGame) {
-            if (isNewGame)
-                SpawnBalls();
+            StartAdShowing();
+            SaveLoadManager.Instance.LoadGameFieldData(gameFieldData => {
+                var ballsList = Balls;
+                ballsList.ForEach(b => Destroy(b.gameObject));
+                GlobalStateManager.Instance.HighScore = Math.Max(gameFieldData.highScore, GlobalStateManager.Instance.HighScore);
+                if (isNewGame) {
+                    GlobalStateManager.Instance.Score = 0;
+                    mainBall.transform.localPosition = Vector3.zero;
+                    SpawnBalls();
+                    SettingsManager.Instance.IsNewGame = false;
+                } else {
+                    GlobalStateManager.Instance.Score = gameFieldData.score;
+                    mainBall.transform.position = gameFieldData.mainBall.position;
+                    mainBall.Rigidbody2D.velocity = gameFieldData.mainBall.velocity;
+                    IsBallsStopped = gameFieldData.isBallsStopped;
+                    gameFieldData.balls.ForEach(b => {
+                        var newBall = Instantiate(ballPrefab, b.position, b.rotation);
+                        newBall.transform.SetParent(balls.transform);
+                        var ballScript = newBall.GetComponent<Ball>();
+                        ballScript.PowerProperty = b.power;
+                        ballScript.Rigidbody2D.velocity = b.velocity;
+                        // Debug.Log(b.velocity);
+                    });
+                    if (!IsBallsStopped) StartCoroutine(DoBallsMotionCheck());
+                }
+            });
         }
 
+        private void OnHome() {
+            StopAdShowing();
+        }
+        
         private void OnBallsStopped() {
-            SpawnBalls(
-                Math.Max(
-                    Random.Range(1, 3), Random.Range(
-                        Math.Max(1, Ball.DestroyedCount - 2), 
-                        Math.Max(3, Ball.DestroyedCount + 1))));
+            if (_ballRadius * _ballRadius * Mathf.PI * _ballsRigidBodyList.Length > _width * _height / 3f) {
+                GlobalStateManager.Instance.GameOver();
+                return;
+            }
+
+            var ballsCnt = Math.Max(2, Ball.DestroyedCount);
+            SpawnBalls(Random.Range(1, ballsCnt + 1));
         }
 
         // Start is called before the first frame update
         private void Awake() {
+            GlobalStateManager.Instance.CurrentGameField = this;
             if (mainBall) {
                 if (!mainBall.GameField || mainBall.GameField != this) {
                     MainBall.GameField = this;
@@ -104,13 +167,15 @@ namespace Internal.Scripts.Game.Gameplay.GameFieldObjects {
             _width = borderScript.Width;
             _height = borderScript.Height;
             _fieldPos = borderTransform.position - new Vector3(_width / 2f, _height / 2f);
+            
+            Ball.BallsCountChangedEvent.AddListener(UpdateBallsList);
+            GlobalStateManager.Instance.GameStartedEvent.AddListener(OnGameStarted);
+            GlobalStateManager.Instance.GameOverEvent.AddListener(OnGameOver);
+            GlobalStateManager.Instance.HomeEvent.AddListener(OnHome);
+            GlobalStateManager.Instance.RestartEvent.AddListener(OnRestart);
         }
 
-        private void OnEnable() {
-            Ball.BallsCountChangedEvent.AddListener(UpdateBallsList);
-            GlobalStateManager.Instance.GameStartEvent.AddListener(OnGameStarted);
-            GlobalStateManager.Instance.GameOverEvent.AddListener(OnGameOver);
-        }
+        
 
         private void OnDisable() {
             StopAllCoroutines();
@@ -118,7 +183,7 @@ namespace Internal.Scripts.Game.Gameplay.GameFieldObjects {
 
         private Vector2? FindBallPos() {
             for (var i = 0; i < searchIterations; i++) {
-                var pos = new Vector2((Random.value) * (_width - _ballRadius * 2) + _ballRadius + _fieldPos.x,
+                var pos = new Vector2(Random.value * (_width - _ballRadius * 2) + _ballRadius + _fieldPos.x,
                     (Random.value) * (_height - _ballRadius * 2) + _ballRadius + _fieldPos.y);
                 var raycastHit2D = Physics2D.CircleCast(pos, _ballRadius + 0.05f, Vector2.zero, 0f);
                 if (!raycastHit2D.collider) {
@@ -128,5 +193,7 @@ namespace Internal.Scripts.Game.Gameplay.GameFieldObjects {
 
             return null;
         }
+
+        
     }
 }

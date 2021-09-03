@@ -4,11 +4,13 @@ using UnityEngine;
 using UnityEngine.Events;
 
 namespace Internal.Scripts.Game.Managers.Implementations {
-    public class SettingsManager : MonoBehaviorSingleton<SettingsManager> {
+    public class SettingsManager : MonoBehaviourSingleton<SettingsManager> {
         [SerializeField] private ColorSchemeObject colorScheme;
         [SerializeField] private AudioSchemeObject audioScheme;
         private bool _isMuted;
+        private bool _isAdsRemoved;
         public UnityEvent MuteSettingChangedEvent { get; } = new UnityEvent();
+        public UnityEvent AdsSettingChangedEvent { get; } = new UnityEvent();
 
         public bool IsMuted {
             get => _isMuted;
@@ -18,6 +20,18 @@ namespace Internal.Scripts.Game.Managers.Implementations {
             } 
         }
 
+        public bool IsNewGame { get; set; } = true;
+
+        public bool IsAdsRemoved {
+            get => _isAdsRemoved;
+            set {
+                _isAdsRemoved = value;
+                AdsSettingChangedEvent.Invoke();
+            }
+        }
+
+        public bool IsSettingsLoaded { get; private set; }
+        // public bool IsProductsVerified { get; private set; }
         public ColorSchemeObject ColorScheme {
             get => colorScheme;
             set => colorScheme = value;
@@ -29,8 +43,14 @@ namespace Internal.Scripts.Game.Managers.Implementations {
         }
 
         protected override void SingletonAwakened() {
-            // LOAD SAVED SETTINGS
-            
+            IsSettingsLoaded = false;
+            SaveLoadManager.Instance.LoadSettingsData(data => {
+                IsMuted = data.mute;
+                IsNewGame = data.isNewGame;
+                IsSettingsLoaded = true;
+                IsAdsRemoved = data.isAdsRemoved;
+            });
+            // IsProductsVerified = true;
         }
     }
 }

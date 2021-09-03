@@ -8,19 +8,18 @@ using UnityEngine.Events;
 
 namespace Internal.Scripts.Game.Gameplay.Balls {
     public class Ball : MonoBehaviour {
-        // [SerializeField] private ColorSchemeObject colorScheme;
         [SerializeField] private GameObject particlesPrefab;
-        public static float AnimationTime => 0.4f;
+        public static float AnimationTime => 0.2f;
         public static int DestroyedCount { get; set; }
         private Color _color = Color.gray;
         private Color _textColor = Color.white;
-        private Rigidbody2D _rigidbody2D;
         private SpriteRenderer _spriteRenderer;
-        // private Collider2D _collider2D;
         private TextMeshPro _text;
         private long _number = 2;
         private int _power = 1;
-        
+
+        public Rigidbody2D Rigidbody2D { get; set; }
+
         public static UnityEvent BallsCountChangedEvent { get; } = new UnityEvent();
         
         public int PowerProperty {
@@ -73,7 +72,7 @@ namespace Internal.Scripts.Game.Gameplay.Balls {
         // Start is called before the first frame update
         private void Awake() {
             // _collider2D = gameObject.GetComponent<Collider2D>();
-            _rigidbody2D = gameObject.GetComponent<Rigidbody2D>();
+            Rigidbody2D = gameObject.GetComponent<Rigidbody2D>();
             _spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
             _text = transform.Find("NumberText")
                 .gameObject.GetComponent<TextMeshPro>();
@@ -87,10 +86,14 @@ namespace Internal.Scripts.Game.Gameplay.Balls {
                 currTime += Time.deltaTime;
                 yield return new WaitForEndOfFrame();
             }
+            transform.localScale = Vector3.one;
+        }
+
+        public void PlaySpawnAnimation() {
+            StartCoroutine(SpawnAnimation(AnimationTime));
         }
         
         private void Start() {
-            StartCoroutine(SpawnAnimation(AnimationTime));
             BallsCountChangedEvent.Invoke();
         }
 
@@ -99,7 +102,7 @@ namespace Internal.Scripts.Game.Gameplay.Balls {
         private void OnCollisionEnter2D(Collision2D other) {
             if (other.gameObject.tag.Equals("Border") 
                 || transform.GetInstanceID() < other.transform.GetInstanceID()) {
-                GlobalAudioManager.PlayHitSound(_rigidbody2D.velocity.magnitude / 60f);
+                GlobalAudioManager.PlayHitSound(Rigidbody2D.velocity.magnitude / 60f);
             }
             var collisionObject = other.gameObject;
             if (!collisionObject.tag.Equals("Ball")) return;

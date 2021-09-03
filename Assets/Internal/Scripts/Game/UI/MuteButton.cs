@@ -15,6 +15,10 @@ namespace Internal.Scripts.Game.UI {
             _image = imageGameObject ? imageGameObject.GetComponent<Image>() : gameObject.GetComponent<Image>();
         }
 
+        private void OnEnable() {
+            _image.sprite = SettingsManager.Instance.IsMuted ? mutedSprite : unMutedSprite;
+        }
+
         private void OnMuteUpdated() {
             _image.sprite = SettingsManager.Instance.IsMuted ? mutedSprite : unMutedSprite;
         }
